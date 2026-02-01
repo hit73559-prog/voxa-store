@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marketplace Demo</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a30;
+      --panel2:#0c162b;
+      --text:#eaf0ff;
+      --muted:#a9b7d7;
+      --brand:#4aa3ff;
+      --ok:#29d17d;
+      --warn:#ffcc66;
+      --danger:#ff5c7a;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(74,163,255,.25), transparent 60%),
+                  radial-gradient(900px 500px at 20% 0%, rgba(41,209,125,.16), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    /* Layout */
+    .app{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      min-height:100vh;
+    }
+    aside{
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), transparent 40%),
+                  var(--panel2);
+      border-left:1px solid var(--border);
+    }
+    main{
+      padding:24px 24px 40px;
+    }
+
+    /* Mobile */
+    .topbar{
+      display:none;
+      position:sticky;
+      top:0;
+      z-index:10;
+      padding:14px 16px;
+      background: rgba(11,18,32,.7);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .burger{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      border-radius:14px;
+      padding:10px 12px;
+      cursor:pointer;
+    }
+    .brandline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brandline .title{
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+
+    @media (max-width: 980px){
+      .app{grid-template-columns: 1fr}
+      aside{
+        position:fixed;
+        inset:0;
+        height:auto;
+        width:min(92vw, 360px);
+        transform: translateX(110%);
+        transition: .25s ease;
+        z-index:50;
+        border-left:none;
+        border-right:1px solid var(--border);
+      }
+      aside.open{transform: translateX(0)}
+      .overlay{
+        position:fixed;
+        inset:0;
+        background: rgba(0,0,0,.55);
+        z-index:40;
+        opacity:0;
+        pointer-events:none;
+        transition:.2s ease;
+      }
+      .overlay.show{
+        opacity:1;
+        pointer-events:auto;
+      }
+      .topbar{display:block}
+      main{padding:18px 16px 30px}
+    }
+
+    /* Sidebar content */
+    .logo{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.04);
+      box-shadow: var(--shadow);
+    }
+    .badge{
+      width:44px;height:44px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(74,163,255,.9), rgba(41,209,125,.7));
+      display:grid;place-items:center;
+      font-weight:900;
+    }
+    .logo h1{
+      margin:0;
+      font-size:16px;
+      line-height:1.2;
+    }
+    .logo p{
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    nav{
+      margin-top:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .navbtn{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      width:100%;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      cursor:pointer;
+      text-align:right;
+      transition:.15s ease;
+    }
+    .navbtn:hover{transform: translateY(-1px); background: rgba(255,255,255,.06)}
+    .navbtn.active{
+      background: rgba(74,163,255,.14);
+      border-color: rgba(74,163,255,.35);
+      box-shadow: 0 12px 30px rgba(74,163,255,.12);
+    }
+    .navicon{
+      width:34px;height:34px;border-radius:12px;
+      background: rgba(255,255,255,.06);
+      display:grid;place-items:center;
+      border:1px solid var(--border);
+      flex:0 0 auto;
+    }
+    .navtext .t{font-weight:800}
+    .navtext .d{font-size:12px;color:var(--muted); margin-top:2px}
+
+    .sidecard{
+      margin-top:14px;
+      padding:14px;
+      border-radius: var(--radius);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .sidecard .small{color:var(--muted); font-size:12px; line-height:1.6}
+    .linkbtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(41,209,125,.35);
+      background: rgba(41,209,125,.10);
+      color:var(--text);
+      text-decoration:none;
+      font-weight:800;
+    }
+
+    /* Main */
+    .pagehead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      margin-bottom:14px;
+    }
+    .pagehead h2{
+      margin:0;
+      font-size:24px;
+      letter-spacing:.2px;
+    }
+    .pagehead p{
+      margin:6px 0 0;
+      color:var(--muted);
+      line-height:1.7;
+      max-width: 70ch;
+    }
+    .chiprow{display:flex;flex-wrap:wrap;gap:8px; justify-content:flex-end}
+    .chip{
+      font-size:12px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:14px;
+      margin-top:16px;
+    }
+    .card{
+      grid-column: span 6;
+      padding:16px;
+      border-radius: var(--radius);
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: var(--shadow);
+      min-height: 120px;
+    }
+    .card h3{margin:0 0 8px; font-size:16px}
+    .card p{margin:0; color:var(--muted); line-height:1.7}
+    .card .meta{margin-top:12px; display:flex; gap:8px; flex-wrap:wrap}
+    .tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+
+    @media (max-width: 980px){
+      .card{grid-column: span 12}
+      .pagehead{flex-direction:column; align-items:flex-start}
+      .chiprow{justify-content:flex-start}
+    }
+
+    /* Shop */
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:14px;
+    }
+    .search{
+      flex:1 1 280px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .search input{
+      width:100%;
+      background: transparent;
+      border:0;
+      outline:none;
+      color:var(--text);
+      font-size:14px;
+    }
+    .select{
+      flex:0 0 auto;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    select{
+      background: transparent;
+      border:0;
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+
+    .product{
+      grid-column: span 4;
+      padding:14px;
+      border-radius: var(--radius);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .pimg{
+      height:120px;
+      border-radius: 16px;
+      border:1px solid var(--border);
+      background:
+        radial-gradient(220px 100px at 30% 20%, rgba(74,163,255,.35), transparent 60%),
+        radial-gradient(220px 100px at 70% 80%, rgba(41,209,125,.25), transparent 60%),
+        rgba(255,255,255,.04);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      padding:10px 12px;
+      margin-bottom:12px;
+    }
+    .price{
+      font-weight:900;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      font-size:12px;
+    }
+    .stock{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(41,209,125,.35);
+      background: rgba(41,209,125,.12);
+    }
+    .product h4{margin:0 0 6px; font-size:15px}
+    .product .desc{margin:0; color:var(--muted); font-size:13px; line-height:1.6}
+    .product .row{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:800;
+    }
+    .btn.primary{
+      border-color: rgba(74,163,255,.45);
+      background: rgba(74,163,255,.16);
+    }
+    .btn.ok{
+      border-color: rgba(41,209,125,.45);
+      background: rgba(41,209,125,.14);
+    }
+
+    @media (max-width: 980px){
+      .product{grid-column: span 12}
+    }
+    @media (min-width: 981px) and (max-width: 1200px){
+      .product{grid-column: span 6}
+    }
+
+    /* Sellers */
+    .seller{
+      grid-column: span 6;
+      padding:16px;
+      border-radius: var(--radius);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .avatar{
+      width:52px;height:52px;border-radius:18px;
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      display:grid;place-items:center;
+      font-weight:900;
+      flex:0 0 auto;
+    }
+    .seller h4{margin:0 0 4px}
+    .seller .bio{margin:0; color:var(--muted); line-height:1.6; font-size:13px}
+    .seller .line{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap}
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    @media (max-width: 980px){
+      .seller{grid-column: span 12}
+    }
+
+    /* Contact */
+    form{
+      margin-top:12px;
+      max-width: 720px;
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.03);
+      padding:16px;
+      box-shadow: var(--shadow);
+    }
+    .fgrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+    input, textarea{
+      width:100%;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      padding:10px 12px;
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+    textarea{min-height:120px; resize:vertical}
+    .factions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .note{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    /* pages */
+    section.page{display:none}
+    section.page.active{display:block}
+
+    footer{
+      margin-top:22px;
+      color:rgba(255,255,255,.45);
+      font-size:12px;
+    }
+    .hr{height:1px;background:var(--border); margin:14px 0}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brandline">
+      <button class="burger" id="openMenu">☰ القائمة</button>
+      <div class="title">Marketplace Demo</div>
+    </div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="app">
+    <aside id="sidebar">
+      <div class="logo">
+        <div class="badge">WY</div>
+        <div>
+          <h1>متجر البيع والشراء</h1>
+          <p>مثال واجهة — سايدبار + صفحات</p>
+        </div>
+      </div>
+
+      <nav>
+        <button class="navbtn active" data-page="about">
+          <div class="navicon">ℹ️</div>
+          <div class="navtext">
+            <div class="t">About us</div>
+            <div class="d">معلومات عننا وتطبيل</div>
+          </div>
+        </button>
+
+        <button class="navbtn" data-page="shop">
+          <div class="navicon">🛒</div>
+          <div class="navtext">
+            <div class="t">Shop</div>
+            <div class="d">الحاجات اللي بنبيعها</div>
+          </div>
+        </button>
+
+        <button class="navbtn" data-page="sellers">
+          <div class="navicon">👤</div>
+          <div class="navtext">
+            <div class="t">Sellers</div>
+            <div class="d">البائعين ومعلومات عنهم</div>
+          </div>
+        </button>
+
+        <button class="navbtn" data-page="contact">
+          <div class="navicon">✉️</div>
+          <div class="navtext">
+            <div class="t">Contact us</div>
+            <div class="d">التواصل معنا</div>
+          </div>
+        </button>
+
+        <button class="navbtn" data-page="support">
+          <div class="navicon">🛠️</div>
+          <div class="navtext">
+            <div class="t">الدعم الفني</div>
+            <div class="d">Discord Support</div>
+          </div>
+        </button>
+      </nav>
+
+      <div class="sidecard">
+        <div class="small">
+          ✅ التصميم دا “مثال” وتقدر توصّله بباك-إند بعدين (Node / PHP / …).<br/>
+          ✅ جاهز RTL + ريسبونسيف للموبايل.
+        </div>
+        <a class="linkbtn" href="#shop">ابدأ التسوّق →</a>
+      </div>
+    </aside>
+
+    <main>
+      <!-- ABOUT -->
+      <section class="page active" id="page-about">
+        <div class="pagehead">
+          <div>
+            <h2>About us</h2>
+            <p>
+              إحنا “أفضل ناس” في البيع والشراء 😄 — هدفنا نخلي تجربة الشراء سهلة، سريعة، وآمنة.
+              عندنا بائعين موثوقين، منتجات مميزة، ودعم فني حاضر معاك.
+            </p>
+          </div>
+          <div class="chiprow">
+            <span class="chip">🔥 شغل جامد</span>
+            <span class="chip">⚡ سرعة رد</span>
+            <span class="chip">🛡️ ثقة وأمان</span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>ليه إحنا؟</h3>
+            <p>لأننا بنختار البائعين بعناية، ونرتّب المنتجات بشكل واضح، ونخليك تشتري وانت مطمّن.</p>
+            <div class="meta">
+              <span class="tag">تجربة مستخدم</span>
+              <span class="tag">جودة</span>
+              <span class="tag">متابعة</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>إزاي شغالين؟</h3>
+            <p>تصفح المنتجات → اختار البائع → تواصل → اتمام الطلب (ده مثال، الربط الحقيقي حسب الباك-إند).</p>
+            <div class="meta">
+              <span class="tag">Marketplace</span>
+              <span class="tag">Multi Sellers</span>
+              <span class="tag">Simple Flow</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>مميزاتنا</h3>
+            <p>بحث سريع + تصنيف + صفحة لكل بائع + صفحة تواصل + دعم فني على ديسكورد.</p>
+            <div class="meta">
+              <span class="tag">بحث</span>
+              <span class="tag">تصنيفات</span>
+              <span class="tag">دعم فني</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>ملاحظات مهمة</h3>
+            <p>ده “واجهة” جاهزة. لو عايزها Full System هنضيف: تسجيل/دخول، سلة، دفع، لوحة تحكم بائعين…</p>
+            <div class="meta">
+              <span class="tag">قابل للتطوير</span>
+              <span class="tag">باك-إند</span>
+              <span class="tag">Dashboard</span>
+            </div>
+          </div>
+        </div>
+
+        <footer>© Marketplace Demo — UI Example</footer>
+      </section>
+
+      <!-- SHOP -->
+      <section class="page" id="page-shop">
+        <div class="pagehead">
+          <div>
+            <h2>Shop</h2>
+            <p>هنا المنتجات اللي بنبيعها. تقدر تبحث وتفلتر وتضيف “للسلة” (سلة تجريبية داخل المتصفح).</p>
+          </div>
+          <div class="chiprow">
+            <span class="chip" id="cartCount">🧺 السلة: 0</span>
+            <span class="chip" id="cartTotal">💰 الإجمالي: 0</span>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search">
+            🔎
+            <input id="searchInput" placeholder="ابحث عن منتج… (مثال: سماعة / كيبورد / حساب)" />
+          </div>
+
+          <div class="select">
+            🏷️
+            <select id="categorySelect">
+              <option value="all">كل التصنيفات</option>
+              <option value="accounts">حسابات</option>
+              <option value="gaming">Gaming</option>
+              <option value="services">خدمات</option>
+              <option value="accessories">ملحقات</option>
+            </select>
+          </div>
+
+          <button class="btn ok" id="clearCart">تفريغ السلة</button>
+        </div>
+
+        <div class="grid" id="productsGrid"></div>
+
+        <div class="hr"></div>
+        <div class="note">
+          * السلة هنا تجريبية (Local). لو عايز سلة حقيقية + طلبات + دفع، نركّب باك-إند.
+        </div>
+      </section>
+
+      <!-- SELLERS -->
+      <section class="page" id="page-sellers">
+        <div class="pagehead">
+          <div>
+            <h2>Sellers</h2>
+            <p>قائمة البائعين اللي بيبيعوا في الموقع + نبذة عنهم وتقييم بسيط (مثال).</p>
+          </div>
+          <div class="chiprow">
+            <span class="chip">👥 بائعين موثوقين</span>
+            <span class="chip">⭐ تقييمات</span>
+          </div>
+        </div>
+
+        <div class="grid" id="sellersGrid"></div>
+      </section>
+
+      <!-- CONTACT -->
+      <section class="page" id="page-contact">
+        <div class="pagehead">
+          <div>
+            <h2>Contact us</h2>
+            <p>اكتب بياناتك ورسالتك (هنا مثال، الرسالة هتظهر كتأكيد فقط).</p>
+          </div>
+          <div class="chiprow">
+            <span class="chip">⏱️ رد سريع</span>
+            <span class="chip">📩 متاحين دايمًا</span>
+          </div>
+        </div>
+
+        <form id="contactForm">
+          <div class="fgrid">
+            <div>
+              <label>الاسم</label>
+              <input required name="name" placeholder="اسمك" />
+            </div>
+            <div>
+              <label>الإيميل</label>
+              <input required type="email" name="email" placeholder="name@example.com" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>الرسالة</label>
+            <textarea required name="message" placeholder="اكتب رسالتك هنا…"></textarea>
+          </div>
+
+          <div class="factions">
+            <button class="btn primary" type="submit">إرسال</button>
+            <button class="btn" type="reset">مسح</button>
+          </div>
+
+          <div class="note" id="contactNote">
+            * لو عايز إرسال حقيقي للإيميل/ديسكورد، نركّب API.
+          </div>
+        </form>
+      </section>
+
+      <!-- SUPPORT -->
+      <section class="page" id="page-support">
+        <div class="pagehead">
+          <div>
+            <h2>الدعم الفني</h2>
+            <p>لو محتاج مساعدة فورًا — ادخل سيرفر الديسكورد للدعم الفني.</p>
+          </div>
+          <div class="chiprow">
+            <span class="chip">🛠️ Support</span>
+            <span class="chip">💬 Discord</span>
+          </div>
+        </div>
+
+        <div class="card" style="max-width:760px">
+          <h3>رابط الدعم الفني</h3>
+          <p>اضغط الزر اللي تحت وهيدخلك على سيرفر الدعم على ديسكورد.</p>
+          <div class="meta">
+            <a class="linkbtn" href="https://discord.gg/uRfdkYg9" target="_blank" rel="noopener">فتح الدعم الفني على Discord</a>
+          </div>
+          <div class="note">* تقدر كمان تحط هنا FAQ أو نظام تذاكر لاحقًا.</div>
+        </div>
+      </section>
+
+      <footer style="margin-top:26px">واجهة تجريبية — تقدر تعدل النصوص والألوان والبيانات براحتك.</footer>
+    </main>
+  </div>
+
+  <script>
+    // ===== Sidebar + Navigation =====
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const openMenu = document.getElementById("openMenu");
+    const navButtons = Array.from(document.querySelectorAll(".navbtn"));
+    const pages = {
+      about: document.getElementById("page-about"),
+      shop: document.getElementById("page-shop"),
+      sellers: document.getElementById("page-sellers"),
+      contact: document.getElementById("page-contact"),
+      support: document.getElementById("page-support"),
+    };
+
+    function setActivePage(key){
+      Object.values(pages).forEach(p => p.classList.remove("active"));
+      pages[key].classList.add("active");
+
+      navButtons.forEach(b => b.classList.toggle("active", b.dataset.page === key));
+
+      // update hash for quick linking
+      history.replaceState(null, "", "#" + key);
+
+      // close on mobile
+      if (window.innerWidth <= 980){
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+      }
+    }
+
+    navButtons.forEach(btn=>{
+      btn.addEventListener("click", ()=> setActivePage(btn.dataset.page));
+    });
+
+    openMenu?.addEventListener("click", ()=>{
+      sidebar.classList.add("open");
+      overlay.classList.add("show");
+    });
+    overlay.addEventListener("click", ()=>{
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
+    });
+
+    // Load from hash
+    const initial = (location.hash || "#about").replace("#","");
+    if (pages[initial]) setActivePage(initial);
+
+    // ===== Demo Data =====
+    const sellers = [
+      { id:"s1", name:"Seller One", rating:4.8, niche:"حسابات", about:"بائع موثوق في الحسابات والخدمات الرقمية.", since:"2023", sales: 1200 },
+      { id:"s2", name:"Seller Pro", rating:4.6, niche:"Gaming", about:"ملحقات جيمينج وأسعار كويسة.", since:"2022", sales: 780 },
+      { id:"s3", name:"Top Seller", rating:4.9, niche:"خدمات", about:"خدمات سريعة + ضمان متابعة.", since:"2021", sales: 2100 },
+      { id:"s4", name:"Budget Deals", rating:4.4, niche:"ملحقات", about:"عروض اقتصادية وجودة محترمة.", since:"2024", sales: 340 },
+    ];
+
+    const products = [
+      { id:"p1", title:"حساب بريميوم (مثال)", category:"accounts", price: 250, sellerId:"s1", stock:true, desc:"حساب جاهز — تفاصيل حسب الاتفاق." },
+      { id:"p2", title:"خدمة تصميم (مثال)", category:"services", price: 180, sellerId:"s3", stock:true, desc:"تصميم بنر/لوجو — تسليم سريع." },
+      { id:"p3", title:"كيبورد ميكانيكال (مثال)", category:"accessories", price: 650, sellerId:"s2", stock:true, desc:"إحساس قوي وصوت ميكانيكال." },
+      { id:"p4", title:"سماعة جيمينج (مثال)", category:"gaming", price: 520, sellerId:"s2", stock:false, desc:"راحة على الرأس وصوت واضح." },
+      { id:"p5", title:"خدمة تعديل (مثال)", category:"services", price: 120, sellerId:"s3", stock:true, desc:"تعديل بسيط وسريع." },
+      { id:"p6", title:"ماوس احترافي (مثال)", category:"gaming", price: 390, sellerId:"s4", stock:true, desc:"خفيف وسريع للاستجابة." },
+    ];
+
+    // ===== Render Sellers =====
+    const sellersGrid = document.getElementById("sellersGrid");
+    function renderSellers(){
+      sellersGrid.innerHTML = sellers.map(s=>{
+        const initials = s.name.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+        return `
+          <div class="seller">
+            <div class="avatar">${initials}</div>
+            <div>
+              <h4>${s.name} <span style="color:var(--warn); font-weight:900">★ ${s.rating}</span></h4>
+              <p class="bio">${s.about}</p>
+              <div class="line">
+                <span class="pill">التخصص: ${s.niche}</span>
+                <span class="pill">من: ${s.since}</span>
+                <span class="pill">مبيعات: ${s.sales}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+    renderSellers();
+
+    // ===== Cart (Local Demo) =====
+    const cart = new Map(); // productId -> qty
+    const cartCount = document.getElementById("cartCount");
+    const cartTotal = document.getElementById("cartTotal");
+
+    function getProduct(id){ return products.find(p=>p.id===id); }
+    function updateCartUI(){
+      let count = 0;
+      let total = 0;
+      for (const [pid, qty] of cart.entries()){
+        const p = getProduct(pid);
+        if (!p) continue;
+        count += qty;
+        total += p.price * qty;
+      }
+      cartCount.textContent = `🧺 السلة: ${count}`;
+      cartTotal.textContent = `💰 الإجمالي: ${total}`;
+    }
+
+    document.getElementById("clearCart").addEventListener("click", ()=>{
+      cart.clear();
+      updateCartUI();
+      alert("تم تفريغ السلة (تجريبي).");
+    });
+
+    // ===== Render Products (with search/filter) =====
+    const productsGrid = document.getElementById("productsGrid");
+    const searchInput = document.getElementById("searchInput");
+    const categorySelect = document.getElementById("categorySelect");
+
+    function renderProducts(){
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const cat = categorySelect.value;
+
+      const list = products.filter(p=>{
+        const matchQ = !q || (p.title + " " + p.desc).toLowerCase().includes(q);
+        const matchC = (cat === "all") || (p.category === cat);
+        return matchQ && matchC;
+      });
+
+      productsGrid.innerHTML = list.map(p=>{
+        const seller = sellers.find(s=>s.id===p.sellerId);
+        return `
+          <div class="product">
+            <div class="pimg">
+              <span class="price">${p.price} EGP</span>
+              <span class="stock" style="${p.stock ? "" : "border-color: rgba(255,92,122,.45); background: rgba(255,92,122,.14)"}">
+                ${p.stock ? "متاح" : "غير متاح"}
+              </span>
+            </div>
+            <h4>${p.title}</h4>
+            <p class="desc">${p.desc}</p>
+
+            <div class="row">
+              <div style="color:var(--muted); font-size:12px">
+                البائع: <b style="color:var(--text)">${seller ? seller.name : "—"}</b>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap">
+                <button class="btn primary" ${p.stock ? "" : "disabled"} data-add="${p.id}">
+                  إضافة للسلة
+                </button>
+                <button class="btn" data-view="${p.sellerId}">صفحة البائع</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Bind buttons
+      productsGrid.querySelectorAll("[data-add]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const id = btn.getAttribute("data-add");
+          const p = getProduct(id);
+          if (!p || !p.stock) return;
+          cart.set(id, (cart.get(id) || 0) + 1);
+          updateCartUI();
+        });
+      });
+
+      productsGrid.querySelectorAll("[data-view]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          // just navigate to sellers page (demo)
+          setActivePage("sellers");
+        });
+      });
+    }
+
+    searchInput.addEventListener("input", renderProducts);
+    categorySelect.addEventListener("change", renderProducts);
+    renderProducts();
+    updateCartUI();
+
+    // ===== Contact Form (demo submit) =====
+    const contactForm = document.getElementById("contactForm");
+    const contactNote = document.getElementById("contactNote");
+
+    contactForm.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const fd = new FormData(contactForm);
+      const name = fd.get("name");
+      contactNote.textContent = `✅ تم استلام رسالتك يا ${name} (تجريبي). لو عايز إرسال حقيقي نربط API.`;
+      contactForm.reset();
+    });
+  </script>
+</body>
+</html>
